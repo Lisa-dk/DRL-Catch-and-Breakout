@@ -7,7 +7,7 @@ import gym
 import numpy as np
 import collections 
 import cv2
-import time
+import copy
 import pylab as pl
 from collections import deque
 
@@ -31,7 +31,8 @@ class DQN_Network():
 
 class DQN():
     def __init__(self, input_shape, n_actions, max_mem_size):
-        self.network = DQN_Network(input_shape, n_actions, 64)
+        self.online_network = DQN_Network(input_shape, n_actions, 64)
+        self.target_network = copy.deepcopy(self.online_network)
         self.init_memory(max_mem_size)
         self.epsilon = 0.5
         self.epsilon_min = 0.001
@@ -61,18 +62,21 @@ class DQN():
             rewards = torch.Tensor(np.array(batch_t[3]))
             dones = torch.Tensor(np.array(batch_t[4]))
 
-            q_values = self.network(states)
-            next_q_values = self.network(states_)
+            q_values = self.online_network(states)
+            next_q_values = self.target_network(states_)
 
             q_targets = rewards + gamma * torch.max(next_q_values, axis=1).values * dones
 
             return q_values, q_targets
             
     
-    def learn(self, batch_size):
+    def learn(self, batch_size, target_net_update=0):
         q_values, q_targets = self.experience_replay(batch_size)
-        self.network.update(q_values, q_targets)
+        self.online_network.update(q_values, q_targets)
         self.epsilon_decay_update(0.99)
+        # Update target network
+        if target_net_update:
+            self.target_network.load_state_dict(self.online_network.state_dict())
 
 
 
