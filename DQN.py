@@ -44,7 +44,7 @@ class DQN():
         if random.random() < self.epsilon:
             return action_space.sample()
         
-        q_values = self.network(state)
+        q_values = self.online_network(state)
         return torch.argmax(q_values).item()
     
     def epsilon_decay_update(self, decay_rate):
