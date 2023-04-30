@@ -33,12 +33,8 @@ class DQN():
     def __init__(self, input_shape, n_actions, max_mem_size):
         self.online_network = DQN_Network(input_shape, n_actions, 64)
         self.target_network = copy.deepcopy(self.online_network)
-        self.init_memory(max_mem_size)
         self.epsilon = 0.5
         self.epsilon_min = 0.001
-
-    def init_memory(self, buffer_size):
-        self.memory = deque(maxlen=buffer_size)
 
     def get_action(self, state, action_space):
         if random.random() < self.epsilon:
@@ -51,9 +47,9 @@ class DQN():
         new_epsilon = self.epsilon - self.epsilon * decay_rate
         self.epsilon = new_epsilon if new_epsilon > self.epsilon_min else self.epsilon_min
     
-    def experience_replay(self, batch_size, gamma=0.9):
-        if len(self.memory) >= batch_size:
-            batch = random.sample(self.memory, batch_size)
+    def experience_replay(self, memory, batch_size, gamma=0.9):
+        if len(memory) >= batch_size:
+            batch = random.sample(memory, batch_size)
             batch_t = list(map(list, zip(*batch)))
 
             states = torch.Tensor(np.array(batch_t[0]))
@@ -70,8 +66,8 @@ class DQN():
             return q_values, q_targets
             
     
-    def learn(self, batch_size, target_net_update=0):
-        q_values, q_targets = self.experience_replay(batch_size)
+    def learn(self, memory,  batch_size, target_net_update=0):
+        q_values, q_targets = self.experience_replay(memory, batch_size)
         self.online_network.update(q_values, q_targets)
         self.epsilon_decay_update(0.99)
         # Update target network
