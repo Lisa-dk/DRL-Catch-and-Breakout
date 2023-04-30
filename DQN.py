@@ -30,7 +30,7 @@ class DQN_Network():
         self.optimizer.step()
 
 class DQN():
-    def __init__(self, input_shape, n_actions, max_mem_size):
+    def __init__(self, input_shape, n_actions):
         self.online_network = DQN_Network(input_shape, n_actions, 64)
         self.target_network = copy.deepcopy(self.online_network)
         self.epsilon = 0.5
