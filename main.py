@@ -5,6 +5,7 @@ from DQN import DQN
 import numpy as np
 import copy
 import sys
+import torch
 
 BUFFER_SIZE = 512
 BATCH_SIZE = 16
@@ -37,10 +38,34 @@ def train_value(env, model, episodes=500):
     return model, rewards
 
 
-def train_policy(env, model, episodes=500, ):
+def train_policy(env, model, episodes=500, max_episode_length=500):
     
     for ep in range(episodes):
-        trajectories = policy.generate_trajectories()
+        state = env.reset()
+        done = False
+        t = 0
+        history = []
+        
+        while not done and t < max_episode_length:
+            action = model.act(state)
+            next_state, reward, done = env.step(action)
+            history.append((state, action, reward))
+            state = next_state
+            t += 1
+
+        history = torch.Tensor(history)
+        states = history[:, 0]
+        actions = history[:, 1]
+        rewards = history[:, 2]
+        probs = model.predict(states)
+        probs = probs[:, actions.long()]
+        
+        
+
+        sum_probs = torch.sum(probs)
+        G_t = torch.sum(rewards)
+        
+        
 
 
     return model, rewards

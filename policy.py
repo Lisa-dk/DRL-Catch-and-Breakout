@@ -13,14 +13,15 @@ class PolicyNet(nn.Module):
         self.fc1 = nn.Linear(120, 16)
         self.relu2 = nn.ReLU()
         self.out = nn.Linear(16, action_dim)
-        self.softmax = nn.Softmax()
+        
+        self.logsoftmax = nn.LogSoftmax()
 
     def forward(self, state):
         out = self.relu1(self.conv1(state))
         out = torch.flatten(out, 1)
         out = self.relu2(self.fc1(out))
 
-        return self.softmax(self.out(out))
+        return self.logsoftmax(self.out(out))
     
 
 class Policy():
@@ -40,5 +41,6 @@ class Policy():
     def act(self, state):
         with torch.no_grad():
             probs = self.model(state)
-            return torch.argmax(probs).item()
+            action = torch.argmax(probs).item()
+            return action
 
