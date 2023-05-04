@@ -9,7 +9,7 @@ import sys
 BUFFER_SIZE = 2048
 BATCH_SIZE = 64
 
-def train(env, model, episodes=500):
+def train_value(env, model, episodes=500):
     rewards = []
     mem_buffer = deque(maxlen=BUFFER_SIZE)
 
@@ -33,11 +33,20 @@ def train(env, model, episodes=500):
     return model, rewards
 
 
+def train_policy(env, model, episodes=500, ):
+    
+    for ep in range(episodes):
+        trajectories = policy.generate_trajectories()
+
+
+    return model, rewards
+
+
 
 def main():
     env = CatchEnv()
     model = DQN(env.state_shape, env.get_num_actions())
-    train(env)
+    train_value(env)
 
 if __name__ == '__main__':
     main()
