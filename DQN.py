@@ -18,7 +18,7 @@ class DQN_Network(torch.nn.Module):
         self.relu3 = nn.ReLU()
         self.max_pool2 = nn.MaxPool2d(2)
         self.fc1 = nn.Linear(864, 512)
-        self.relu2 = nn.ReLU()  
+        self.relu4 = nn.ReLU()  
         self.fc3 = nn.Linear(512, n_actions)
 
 
@@ -29,10 +29,9 @@ class DQN_Network(torch.nn.Module):
         state = self.relu3(self.conv3(state))
         state = self.max_pool2(state)
         
-
         state = torch.flatten(state, 1)
 
-        state = self.relu2(self.fc1(state))
+        state = self.relu4(self.fc1(state))
         out = self.fc3(state)
 
         return out

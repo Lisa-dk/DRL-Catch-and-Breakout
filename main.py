@@ -80,14 +80,14 @@ def train_value(env, model, episodes=4000, eval_period=10):
     return model, eval_scores
 
 
-def train_policy(env, model, episodes=500, max_episode_length=1000, eval_period=10):
+def train_policy(env, model, episodes=1000, max_episode_length=1000, eval_period=10):
     eval_scores = []
     
     for ep in range(episodes):
         if ep % eval_period == 0:
             eval_reward = evaluate_model(env, model)
             eval_scores.append(eval_reward)
-            # print(f"Episode: {ep}; Reward evaluation: {eval_reward}")
+            print(f"Episode: {ep}; Reward evaluation: {eval_reward}")
             
         state = env.reset()
         state = np.transpose(state, [2, 0, 1])
@@ -140,10 +140,10 @@ def train_policy(env, model, episodes=500, max_episode_length=1000, eval_period=
 
 def main():
     env = CatchEnv()
-    model = DQN(env.state_shape(), env.get_num_actions())
-    model, scores = train_value(env, model)
-    # model = Policy(env.get_num_actions())
-    # model, scores = train_policy(env, model)
+    # model = DQN(env.state_shape(), env.get_num_actions())
+    # model, scores = train_value(env, model)
+    model = Policy(env.state_shape(), env.get_num_actions())
+    model, scores = train_policy(env, model)
     plot_scores(scores)
 
 if __name__ == '__main__':

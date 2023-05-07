@@ -4,34 +4,42 @@ import torch.nn as nn
 
 class PolicyNet(nn.Module):
 
-    def __init__(self, action_dim):
+    def __init__(self, input_shape, action_dim):
         super(PolicyNet, self).__init__()
 
-        self.conv1 = nn.Conv2d(4, 8, kernel_size=5)
+        self.conv1 = nn.Conv2d(input_shape[0], 4, kernel_size=8)
         self.relu1 = nn.ReLU()
+        self.conv2 = nn.Conv2d(4, 8, kernel_size=4)
+        self.relu2 = nn.ReLU()
+        self.conv3 = nn.Conv2d(8, 16, kernel_size=4)
+        self.relu3 = nn.ReLU()
         self.max_pool = nn.MaxPool2d(2)
 
-        self.fc1 = nn.Linear(12800, 16)
-        self.relu2 = nn.ReLU()
-        self.out = nn.Linear(16, action_dim)
+        self.fc1 = nn.Linear(19600, 512)
+        self.relu4 = nn.ReLU()
+        self.out = nn.Linear(512, action_dim)
         
-        self.logsoftmax = nn.Softmax()
+        self.logsoftmax = nn.LogSoftmax()
 
     def forward(self, state):
         out = self.relu1(self.conv1(state))
+        out = self.relu2(self.conv2(out))
+        out = self.relu3(self.conv3(out))
         out = self.max_pool(out)
+
         out = torch.flatten(out, 1)
-        out = self.relu2(self.fc1(out))
+
+        out = self.relu4(self.fc1(out))
 
         return self.logsoftmax(self.out(out))
     
 
 class Policy():
 
-    def __init__(self, action_dim):
+    def __init__(self, input_shape, action_dim):
         self.name = "policy"
-        self.model = PolicyNet(action_dim)
-        self.optim = torch.optim.RMSprop(self.model.parameters())
+        self.model = PolicyNet(input_shape, action_dim)
+        self.optim = torch.optim.RMSprop(self.model.parameters(), lr=0.0001)
 
 
     def loss(self, log_probs, rewards):
