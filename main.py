@@ -7,7 +7,7 @@ import torch
 
 import matplotlib.pyplot as plt
 
-BUFFER_SIZE = 1028
+BUFFER_SIZE = 2000
 BATCH_SIZE = 32
 
 def plot_scores(scores):
@@ -41,7 +41,7 @@ def evaluate_model(env, model, eval_episodes=10):
         
 
 
-def train_value(env, model, episodes=4000, eval_period=10):
+def train_value(env, model, episodes=3000, eval_period=10):
     rewards = []
     mem_buffer = deque(maxlen=BUFFER_SIZE) # to numpy array and override from start when full
     eval_scores = []
@@ -56,7 +56,7 @@ def train_value(env, model, episodes=4000, eval_period=10):
         state = np.transpose(state, [2, 0, 1])
         done = False
         cumulative_reward = 0
-        iter_copy  = 200
+        iter_copy  = 300
         t = 0
 
         while not done:
