@@ -25,7 +25,10 @@ def evaluate_model(env, model, eval_episodes=10):
         
         while not done:
             state = np.expand_dims(state, axis=0)
-            action = model.act(state, greedy=True)
+            if model.name == "DQN":
+                action = model.act(state, env.get_num_actions())
+            elif model.name == "policy":
+                action = model.act(state, greedy=True)
             next_state, reward, done = env.step(action)
             total_reward += reward
             next_state = np.transpose(next_state, [2, 0, 1])
@@ -37,23 +40,26 @@ def evaluate_model(env, model, eval_episodes=10):
         
 
 
-def train_value(env, model, episodes=500):
+def train_value(env, model, episodes=500, eval_period=10):
     rewards = []
     mem_buffer = deque(maxlen=BUFFER_SIZE)
+    eval_scores = []
 
     for episode in range(episodes):
+        if episode % eval_period == 0:
+            eval_reward = evaluate_model(env, model)
+            eval_scores.append(eval_reward)
+
         state = env.reset()
         state = np.transpose(state, [2, 0, 1])
-        state = np.expand_dims(state, axis=0)
         done = False
         cumulative_reward = 0
 
         while not done:
-            action = model.get_action(state, env.get_num_actions())
-            print(action)
+            action = model.act(np.expand_dims(state, axis=0), env.get_num_actions())
+            
             next_state, reward, done = env.step(action)
             next_state = np.transpose(next_state, [2, 0, 1])
-            next_state = np.expand_dims(next_state, axis=0)
             cumulative_reward += reward
 
             mem_buffer.append((state, action, next_state, reward, done))
@@ -61,7 +67,7 @@ def train_value(env, model, episodes=500):
 
             model.learn(mem_buffer, BATCH_SIZE, target_net_update=True)
 
-        print(f"Episode {episode}; reward: {cumulative_reward}")
+        # print(f"Episode {episode}; reward: {cumulative_reward}")
         rewards.append(cumulative_reward)
 
     return model, rewards
@@ -108,7 +114,7 @@ def train_policy(env, model, episodes=500, max_episode_length=1000, eval_period=
         actions = torch.Tensor(np.asarray(history['actions']))
         rewards = torch.Tensor(np.asarray(history['rewards']))
 
-        probs = model.predict(states)
+        probs = model.predict(states)  
         action_probs = probs[:, actions.long()]
         
         loss = - torch.sum(action_probs * rewards) / t
@@ -125,10 +131,10 @@ def train_policy(env, model, episodes=500, max_episode_length=1000, eval_period=
 
 def main():
     env = CatchEnv()
-    # model = DQN(env.state_shape(), env.get_num_actions())
-    # train_value(env, model)
-    model = Policy(env.get_num_actions())
-    model, scores = train_policy(env, model)
+    model = DQN(env.state_shape(), env.get_num_actions())
+    model, scores = train_value(env, model)
+    # model = Policy(env.get_num_actions())
+    # model, scores = train_policy(env, model)
     plot_scores(scores)
 
 if __name__ == '__main__':

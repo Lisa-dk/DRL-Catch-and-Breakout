@@ -29,6 +29,7 @@ class PolicyNet(nn.Module):
 class Policy():
 
     def __init__(self, action_dim):
+        self.name = "policy"
         self.model = PolicyNet(action_dim)
         self.optim = torch.optim.RMSprop(self.model.parameters())
 
