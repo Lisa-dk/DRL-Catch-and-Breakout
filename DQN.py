@@ -1,15 +1,8 @@
 import torch
-import torch.nn as nn
+import torch.nn
 import random
-from tqdm import tqdm
-import pickle 
-import gym
 import numpy as np
-import collections 
-import cv2
 import copy
-import pylab as pl
-from collections import deque
 
 class DQN_Network(torch.nn.Module):
     def __init__(self, input_shape, n_actions, hidden_size):
