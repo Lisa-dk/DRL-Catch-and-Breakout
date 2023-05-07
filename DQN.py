@@ -1,44 +1,48 @@
 import torch
-import torch.nn
+import torch.nn as nn
 import random
 import numpy as np
 import copy
 
 class DQN_Network(torch.nn.Module):
+    #https://daiwk.github.io/assets/dqn.pdf
     def __init__(self, input_shape, n_actions, hidden_size):
         super(DQN_Network, self).__init__()
 
-        self.conv1 = torch.nn.Conv2d(input_shape[0], hidden_size, 5)
-        self.relu1 = torch.nn.ReLU()
-        self.max_pool = torch.nn.MaxPool2d(2)
-        self.fc1 = torch.nn.Linear(25600, hidden_size)
-        self.relu2 = torch.nn.ReLU()
-        self.fc2 = torch.nn.Linear(hidden_size, hidden_size*2)
-        self.relu3 = torch.nn.ReLU()
-        self.fc3 = torch.nn.Linear(hidden_size*2, n_actions)
+        self.conv1 = nn.Conv2d(input_shape[0], hidden_size, 8, 4)
+        self.relu1 = nn.ReLU()
+        self.conv2 = nn.Conv2d(hidden_size, hidden_size*2, 4, 2)
+        self.relu2 = nn.ReLU()
+        self.conv3 = nn.Conv2d(hidden_size*2, hidden_size*3, 3, 1)
+        self.relu3 = nn.ReLU()
+        self.max_pool = nn.MaxPool2d(2)
+        self.fc1 = nn.Linear(864, 512)
+        self.relu2 = nn.ReLU()
+        self.fc3 = nn.Linear(512, n_actions)
 
 
     def forward(self, state):
         state = self.relu1(self.conv1(state))
+        state = self.relu2(self.conv2(state))
+        state = self.relu3(self.conv3(state))
         state = self.max_pool(state)
 
         state = torch.flatten(state, 1)
 
         state = self.relu2(self.fc1(state))
-        state = self.relu3(self.fc2(state))
         out = self.fc3(state)
 
         return out
 
 class DQN():
-    def __init__(self, input_shape, n_actions, learn_rate=0.05):
+    def __init__(self, input_shape, n_actions, learn_rate=0.0001):
         self.name = "DQN"
-        self.online_network = DQN_Network(input_shape, n_actions, 16)
+        self.online_network = DQN_Network(input_shape, n_actions, 32)
         self.target_network = copy.deepcopy(self.online_network)
-        self.epsilon = 0.5
+        self.epsilon = 0.4
         self.epsilon_min = 0.001
 
-        self.loss = torch.nn.MSELoss()
+        self.loss = torch.nn.MSELoss() #smooth l1 loss huber loss
         self.optimizer = torch.optim.Adam(self.online_network.parameters(), lr=learn_rate)
 
     def act(self, state, action_space):
@@ -80,7 +84,7 @@ class DQN():
             return q_values, q_targets
             
     
-    def learn(self, memory, batch_size, target_net_update=True):
+    def learn(self, memory, batch_size, target_net_update=False):
         if len(memory) < batch_size:
             return
 

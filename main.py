@@ -7,7 +7,7 @@ import torch
 
 import matplotlib.pyplot as plt
 
-BUFFER_SIZE = 512
+BUFFER_SIZE = 1028
 BATCH_SIZE = 32
 
 def plot_scores(scores):
@@ -16,11 +16,12 @@ def plot_scores(scores):
 
 
 def evaluate_model(env, model, eval_episodes=10):
-    avg_reward = 0
+    avg_reward = 0.0
+
     for _ in range(eval_episodes):
         state = env.reset()
         state = np.transpose(state, [2, 0, 1])
-        total_reward = 0
+        total_reward = 0.0
         done = False
         
         while not done:
@@ -40,21 +41,23 @@ def evaluate_model(env, model, eval_episodes=10):
         
 
 
-def train_value(env, model, episodes=500, eval_period=10):
+def train_value(env, model, episodes=4000, eval_period=10):
     rewards = []
-    mem_buffer = deque(maxlen=BUFFER_SIZE)
+    mem_buffer = deque(maxlen=BUFFER_SIZE) # to numpy array and override from start when full
     eval_scores = []
 
     for episode in range(episodes):
         if episode % eval_period == 0:
             eval_reward = evaluate_model(env, model)
             eval_scores.append(eval_reward)
-             # print(f"Episode {episode}; Evaluation reward: {eval_reward}")
+            print(f"Episode {episode}; Evaluation reward: {eval_reward}")
 
         state = env.reset()
         state = np.transpose(state, [2, 0, 1])
         done = False
         cumulative_reward = 0
+        iter_copy  = 200
+        t = 0
 
         while not done:
             action = model.act(np.expand_dims(state, axis=0), env.get_num_actions())
@@ -66,11 +69,15 @@ def train_value(env, model, episodes=500, eval_period=10):
             mem_buffer.append((state, action, next_state, reward, done))
             state = next_state
 
-            model.learn(mem_buffer, BATCH_SIZE, target_net_update=True)
+            if t % iter_copy == 0:
+                model.learn(mem_buffer, BATCH_SIZE, target_net_update=True)
+            else:
+                model.learn(mem_buffer, BATCH_SIZE, target_net_update=False)
+            t += 1
 
         rewards.append(cumulative_reward)
 
-    return model, rewards
+    return model, eval_scores
 
 
 def train_policy(env, model, episodes=500, max_episode_length=1000, eval_period=10):
@@ -133,10 +140,10 @@ def train_policy(env, model, episodes=500, max_episode_length=1000, eval_period=
 
 def main():
     env = CatchEnv()
-    # model = DQN(env.state_shape(), env.get_num_actions())
-    # model, scores = train_value(env, model)
-    model = Policy(env.get_num_actions())
-    model, scores = train_policy(env, model)
+    model = DQN(env.state_shape(), env.get_num_actions())
+    model, scores = train_value(env, model)
+    # model = Policy(env.get_num_actions())
+    # model, scores = train_policy(env, model)
     plot_scores(scores)
 
 if __name__ == '__main__':
