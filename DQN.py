@@ -61,16 +61,17 @@ class DQN():
     def experience_replay(self, memory, batch_size, gamma=0.9):
         if len(memory) >= batch_size:
             batch = random.sample(memory, batch_size)
-            states = torch.Tensor(np.array([batch[i][0] for i in range(len(batch))]))
-            actions = torch.Tensor(np.array([batch[i][1] for i in range(len(batch))]))
-            states_ = torch.Tensor(np.array([batch[i][2] for i in range(len(batch))]))
-            rewards = torch.Tensor(np.array([batch[i][3] for i in range(len(batch))]))
-            dones = torch.Tensor(np.array([batch[i][4] for i in range(len(batch))]))
+            states = torch.Tensor(np.array([batch[i][0] for i in range(batch_size)]))
+            actions = torch.Tensor(np.array([batch[i][1] for i in range(batch_size)]))
+            states_ = torch.Tensor(np.array([batch[i][2] for i in range(batch_size)]))
+            rewards = torch.Tensor(np.array([batch[i][3] for i in range(batch_size)]))
+            dones = torch.Tensor(np.array([batch[i][4] for i in range(batch_size)]))
 
-            q_values = self.online_network(states)
-            for dim in range(len(q_values)):
-                q_values[dim] = (torch.select(q_values[dim], 0, actions.int()[dim]))
-            q_values = q_values[:,1]
+            q_values = self.online_network(states).gather(1, actions.long().reshape(batch_size, 1))
+            q_values = q_values.reshape(batch_size)
+            # for dim in range(len(q_values)):
+            #     q_values[dim] = (torch.select(q_values[dim], 0, actions.int()[dim]))
+            # q_values = q_values[:,1]
 
             with torch.no_grad():
                 next_q_values = self.target_network(states_)
@@ -79,7 +80,7 @@ class DQN():
             return q_values, q_targets
             
     
-    def learn(self, memory, batch_size, target_net_update=0):
+    def learn(self, memory, batch_size, target_net_update=True):
         if len(memory) < batch_size:
             return
 
