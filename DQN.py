@@ -90,7 +90,7 @@ class DQN():
 
         q_values, q_targets = self.experience_replay(memory, batch_size)
         self.update(q_values, q_targets)
-        self.epsilon_decay_update(0.99)
+        self.epsilon_decay_update(0.01)
         # Update target network
         if target_net_update:
             self.target_network.load_state_dict(self.online_network.state_dict())
