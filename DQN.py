@@ -16,8 +16,8 @@ class DQN_Network(torch.nn.Module):
         # self.max_pool1 = nn.MaxPool2d(2)
         self.conv3 = nn.Conv2d(hidden_size*2, hidden_size*3, 3, 1)
         self.relu3 = nn.ReLU()
-        self.max_pool2 = nn.MaxPool2d(2)
-        self.fc1 = nn.Linear(864, 512)
+        # self.max_pool2 = nn.MaxPool2d(2)
+        self.fc1 = nn.Linear(4704, 512)
         self.relu4 = nn.ReLU()  
         self.fc3 = nn.Linear(512, n_actions)
 
@@ -27,7 +27,7 @@ class DQN_Network(torch.nn.Module):
         state = self.relu2(self.conv2(state))
         # state = self.max_pool1(state)
         state = self.relu3(self.conv3(state))
-        state = self.max_pool2(state)
+        # state = self.max_pool2(state)
         
         state = torch.flatten(state, 1)
 
@@ -41,12 +41,12 @@ class DQN():
         self.name = "DQN"
         self.online_network = DQN_Network(input_shape, n_actions, 32)
         self.target_network = copy.deepcopy(self.online_network)
-        self.epsilon = 0.3
-        self.epsilon_min = 0.001
+        self.epsilon = 1.0
+        self.epsilon_min = 0.01
 
         # self.loss = torch.nn.MSELoss() #smooth l1 loss huber loss
         self.loss = nn.HuberLoss(reduction='mean', delta=1.0)
-        self.optimizer = torch.optim.Adam(self.online_network.parameters(), lr=learn_rate)
+        self.optimizer = torch.optim.RMSprop(self.online_network.parameters(), lr=learn_rate)
 
     def act(self, state, action_space):
         if random.random() < self.epsilon:
@@ -90,10 +90,12 @@ class DQN():
 
         q_values, q_targets = self.experience_replay(memory, batch_size)
         self.update(q_values, q_targets)
-        self.epsilon_decay_update(0.01)
+        self.epsilon_decay_update(0.001)
         # Update target network
         if target_net_update:
-            self.target_network.load_state_dict(self.online_network.state_dict())
+            # self.target_network.load_state_dict(self.online_network.state_dict())
+            self.target_network = copy.deepcopy(self.online_network)
+
 
 
 

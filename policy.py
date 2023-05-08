@@ -19,7 +19,7 @@ class PolicyNet(nn.Module):
         self.relu4 = nn.ReLU()
         self.out = nn.Linear(512, action_dim)
         
-        self.logsoftmax = nn.LogSoftmax()
+        self.softmax = nn.Softmax()
 
     def forward(self, state):
         out = self.relu1(self.conv1(state))
@@ -31,7 +31,7 @@ class PolicyNet(nn.Module):
 
         out = self.relu4(self.fc1(out))
 
-        return self.logsoftmax(self.out(out))
+        return self.softmax(self.out(out))
     
 
 class Policy():
