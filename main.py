@@ -83,43 +83,47 @@ def train_value(env, model, episodes=2500, eval_period=10):
     return model, eval_scores
 
 
-def train_policy(env, model, episodes=8000, max_episode_length=1000, eval_period=10):
+def train_policy(env, model, episodes=3000, max_episode_length=1000, eval_period=10):
     eval_scores = []
+    batch_k = 8
     
     for ep in range(episodes):
         if ep % eval_period == 0:
             eval_reward = evaluate_model(env, model)
             eval_scores.append(eval_reward)
             print(f"Episode: {ep}; Reward evaluation: {eval_reward}")
-            
-        state = env.reset()
-        state = np.transpose(state, [2, 0, 1])
         
-        done = False
-        t = 0
-        history = {
-            'states': [],
-            'actions': [],
-            'rewards': []
-        }
         total_reward = 0
+        t = 0
         
-        while not done and t < max_episode_length:
-            history['states'].append(state)
-            state = np.expand_dims(state, axis=0)
-
-            action  = model.act(state)
-
-            history['actions'].append(action)
-
-            next_state, reward, done = env.step(action)
-            history['rewards'].append(reward)
-
-            total_reward += reward
+        for k in range(batch_k):
             
-            next_state = np.transpose(next_state, [2, 0, 1])
-            state = next_state
-            t += 1
+            state = env.reset()
+            state = np.transpose(state, [2, 0, 1])
+            
+            done = False
+            history = {
+                'states': [],
+                'actions': [],
+                'rewards': []
+            }
+            
+            while not done and t < max_episode_length:
+                history['states'].append(state)
+                state = np.expand_dims(state, axis=0)
+
+                action  = model.act(state)
+
+                history['actions'].append(action)
+
+                next_state, reward, done = env.step(action)
+                history['rewards'].append(reward)
+
+                total_reward += reward
+                
+                next_state = np.transpose(next_state, [2, 0, 1])
+                state = next_state
+                t += 1
 
         states = torch.Tensor(np.asarray(history['states']))
         actions = torch.Tensor(np.asarray(history['actions']))
