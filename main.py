@@ -4,10 +4,12 @@ from collections import deque
 from DQN import DQN
 import numpy as np
 import torch
+import random
+import sys
 
 import matplotlib.pyplot as plt
 
-BUFFER_SIZE = 2500
+BUFFER_SIZE = 3000
 BATCH_SIZE = 32
 
 def plot_scores(scores):
@@ -41,7 +43,7 @@ def evaluate_model(env, model, eval_episodes=10):
         
 
 
-def train_value(env, model, episodes=3000, eval_period=10):
+def train_value(env, model, episodes=2500, eval_period=10):
     rewards = []
     mem_buffer = deque(maxlen=BUFFER_SIZE) # to numpy array and override from start when full
     eval_scores = []
@@ -57,7 +59,7 @@ def train_value(env, model, episodes=3000, eval_period=10):
         state = np.transpose(state, [2, 0, 1])
         done = False
         cumulative_reward = 0
-        iter_copy  = 500
+        iter_copy  = 750
 
         while not done:
             action = model.act(np.expand_dims(state, axis=0), env.get_num_actions())
@@ -67,6 +69,7 @@ def train_value(env, model, episodes=3000, eval_period=10):
             mem_buffer.append((state, action, next_state, reward, done))
 
             if t % iter_copy == 0:
+                print("update")
                 model.learn(mem_buffer, BATCH_SIZE, target_net_update=True)
             else:
                 model.learn(mem_buffer, BATCH_SIZE, target_net_update=False)
@@ -80,7 +83,7 @@ def train_value(env, model, episodes=3000, eval_period=10):
     return model, eval_scores
 
 
-def train_policy(env, model, episodes=3000, max_episode_length=1000, eval_period=10):
+def train_policy(env, model, episodes=8000, max_episode_length=1000, eval_period=10):
     eval_scores = []
     
     for ep in range(episodes):
@@ -141,11 +144,16 @@ def train_policy(env, model, episodes=3000, max_episode_length=1000, eval_period
 
 
 def main():
+    algorithm = sys.argv[1]
+    print(algorithm)
     env = CatchEnv()
-    # model = DQN(env.state_shape(), env.get_num_actions())
-    # model, scores = train_value(env, model)
-    model = Policy(env.state_shape(), env.get_num_actions())
-    model, scores = train_policy(env, model)
+    
+    if algorithm.lower() == "dqn":
+        model = DQN(env.state_shape(), env.get_num_actions())
+        model, scores = train_value(env, model)
+    else:
+        model = Policy(env.state_shape(), env.get_num_actions())
+        model, scores = train_policy(env, model)
     plot_scores(scores)
 
 if __name__ == '__main__':

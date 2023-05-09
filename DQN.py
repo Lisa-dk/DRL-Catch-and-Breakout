@@ -13,11 +13,10 @@ class DQN_Network(torch.nn.Module):
         self.relu1 = nn.ReLU()
         self.conv2 = nn.Conv2d(hidden_size, hidden_size*2, 4, 2)
         self.relu2 = nn.ReLU()
-        # self.max_pool1 = nn.MaxPool2d(2)
-        self.conv3 = nn.Conv2d(hidden_size*2, hidden_size*3, 3, 1)
+        self.conv3 = nn.Conv2d(hidden_size*2, hidden_size*2, 3, 1)
         self.relu3 = nn.ReLU()
-        # self.max_pool2 = nn.MaxPool2d(2)
-        self.fc1 = nn.Linear(4704, 512)
+
+        self.fc1 = nn.Linear(3136, 512)
         self.relu4 = nn.ReLU()  
         self.fc3 = nn.Linear(512, n_actions)
 
@@ -25,9 +24,7 @@ class DQN_Network(torch.nn.Module):
     def forward(self, state):
         state = self.relu1(self.conv1(state))
         state = self.relu2(self.conv2(state))
-        # state = self.max_pool1(state)
         state = self.relu3(self.conv3(state))
-        # state = self.max_pool2(state)
         
         state = torch.flatten(state, 1)
 
@@ -37,16 +34,17 @@ class DQN_Network(torch.nn.Module):
         return out
 
 class DQN():
-    def __init__(self, input_shape, n_actions, learn_rate=0.0001):
+    def __init__(self, input_shape, n_actions, learn_rate=0.00025):
         self.name = "DQN"
         self.online_network = DQN_Network(input_shape, n_actions, 32)
-        self.target_network = copy.deepcopy(self.online_network)
+        self.target_network =  DQN_Network(input_shape, n_actions, 32)
+        self.target_network.load_state_dict(self.online_network.state_dict())
         self.epsilon = 1.0
-        self.epsilon_min = 0.01
+        self.epsilon_min = 0.1
 
         # self.loss = torch.nn.MSELoss() #smooth l1 loss huber loss
-        self.loss = nn.HuberLoss(reduction='mean', delta=1.0)
-        self.optimizer = torch.optim.RMSprop(self.online_network.parameters(), lr=learn_rate)
+        self.loss = nn.SmoothL1Loss()
+        self.optimizer = torch.optim.Adam(self.online_network.parameters(), lr=learn_rate)
 
     def act(self, state, action_space):
         if random.random() < self.epsilon:
@@ -65,21 +63,24 @@ class DQN():
         new_epsilon = self.epsilon - self.epsilon * decay_rate
         self.epsilon = new_epsilon if new_epsilon > self.epsilon_min else self.epsilon_min
     
-    def experience_replay(self, memory, batch_size, gamma=0.9):
+    def experience_replay(self, memory, batch_size, gamma=0.99):
         if len(memory) >= batch_size:
             batch = random.sample(memory, batch_size)
+
             states = torch.Tensor(np.array([batch[i][0] for i in range(batch_size)]))
             actions = torch.Tensor(np.array([batch[i][1] for i in range(batch_size)]))
             states_ = torch.Tensor(np.array([batch[i][2] for i in range(batch_size)]))
             rewards = torch.Tensor(np.array([batch[i][3] for i in range(batch_size)]))
             dones = torch.Tensor(np.array([batch[i][4] for i in range(batch_size)]))
 
-            q_values = self.online_network(states).gather(1, actions.long().reshape(batch_size, 1))
-            q_values = q_values.reshape(batch_size)
-
+            q_values = self.online_network(states)
+            q_values = q_values[np.arange(batch_size), actions.int()]
+            # q_values = self.online_network(states).gather(1, actions.long().reshape(batch_size, 1))
+            # q_values = q_values.reshape(batch_size)
             with torch.no_grad():
                 next_q_values = self.target_network(states_)
-            q_targets = rewards + gamma * torch.max(next_q_values, axis=1).values * dones
+
+            q_targets = rewards + gamma * torch.max(next_q_values, axis=1).values * (1-dones)
 
             return q_values, q_targets
             
@@ -88,13 +89,14 @@ class DQN():
         if len(memory) < batch_size:
             return
 
+        if target_net_update:
+            self.target_network.load_state_dict(self.online_network.state_dict())
+
         q_values, q_targets = self.experience_replay(memory, batch_size)
         self.update(q_values, q_targets)
-        self.epsilon_decay_update(0.001)
-        # Update target network
-        if target_net_update:
-            # self.target_network.load_state_dict(self.online_network.state_dict())
-            self.target_network = copy.deepcopy(self.online_network)
+        self.epsilon_decay_update(0.0001)
+
+        
 
 
 

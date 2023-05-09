@@ -7,15 +7,14 @@ class PolicyNet(nn.Module):
     def __init__(self, input_shape, action_dim):
         super(PolicyNet, self).__init__()
 
-        self.conv1 = nn.Conv2d(input_shape[0], 4, kernel_size=8)
+        self.conv1 = nn.Conv2d(input_shape[0], 32, kernel_size=8, stride=4)
         self.relu1 = nn.ReLU()
-        self.conv2 = nn.Conv2d(4, 8, kernel_size=4)
+        self.conv2 = nn.Conv2d(32, 64, kernel_size=4, stride=2)
         self.relu2 = nn.ReLU()
-        self.conv3 = nn.Conv2d(8, 16, kernel_size=4)
+        self.conv3 = nn.Conv2d(64, 64, kernel_size=3)
         self.relu3 = nn.ReLU()
-        self.max_pool = nn.MaxPool2d(2)
 
-        self.fc1 = nn.Linear(19600, 512)
+        self.fc1 = nn.Linear(3136, 512)
         self.relu4 = nn.ReLU()
         self.out = nn.Linear(512, action_dim)
         
@@ -25,7 +24,6 @@ class PolicyNet(nn.Module):
         out = self.relu1(self.conv1(state))
         out = self.relu2(self.conv2(out))
         out = self.relu3(self.conv3(out))
-        out = self.max_pool(out)
 
         out = torch.flatten(out, 1)
 
