@@ -52,7 +52,7 @@ def evaluate_model(env, model, eval_episodes=10):
 
 def train_value(env, model, episodes=2500, eval_period=10):
     rewards = []
-    mem_buffer = deque(maxlen=BUFFER_SIZE) # to numpy array and override from start when full
+    mem_buffer = deque(maxlen=BUFFER_SIZE) 
     eval_scores = []
     t = 0
 
