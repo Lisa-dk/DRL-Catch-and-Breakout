@@ -92,7 +92,9 @@ def train_value(env, model, episodes=2500, eval_period=10):
 
 def train_policy(env, model, episodes=3000, max_episode_length=1000, eval_period=10):
     eval_scores = []
-    batch_k = 8
+    batch_k = 1
+    memory = deque(maxlen=BUFFER_SIZE)
+    total_iterations = 0
     
     for ep in range(episodes):
         if ep % eval_period == 0:
@@ -100,8 +102,14 @@ def train_policy(env, model, episodes=3000, max_episode_length=1000, eval_period
             eval_scores.append(eval_reward)
             print(f"Episode: {ep}; Reward evaluation: {eval_reward}")
         
-        total_reward = 0
+        iter_copy  = 750
         t = 0
+        
+        # history = {
+        #         'states': [],
+        #         'actions': [],
+        #         'rewards': []
+        #     }
         
         for k in range(batch_k):
             
@@ -109,49 +117,40 @@ def train_policy(env, model, episodes=3000, max_episode_length=1000, eval_period
             state = np.transpose(state, [2, 0, 1])
             
             done = False
-            history = {
-                'states': [],
-                'actions': [],
-                'rewards': []
-            }
             
             while not done and t < max_episode_length:
-                history['states'].append(state)
-                state = np.expand_dims(state, axis=0)
+                # history['states'].append(state)
 
-                action  = model.act(state)
+                action  = model.act(np.expand_dims(state, axis=0))
 
-                history['actions'].append(action)
+                # history['actions'].append(action)
 
                 next_state, reward, done = env.step(action)
-                history['rewards'].append(reward)
-
-                total_reward += reward
+                # history['rewards'].append(reward)
                 
                 next_state = np.transpose(next_state, [2, 0, 1])
+                memory.append((state, action, reward, next_state, done))
+
+                model.learn_value(memory, BATCH_SIZE)
+                if total_iterations % iter_copy == 0:
+                    model.update_target_network()
+
                 state = next_state
                 t += 1
+                total_iterations += 1
 
-        states = torch.Tensor(np.asarray(history['states']))
-        actions = torch.Tensor(np.asarray(history['actions']))
-        rewards = torch.Tensor(np.asarray(history['rewards']))
+        most_recent = list(memory)[-t:]
+
+        states = torch.Tensor(np.array([most_recent[i][0] for i in range(t)]))
+        actions = torch.Tensor(np.asarray([most_recent[i][1] for i in range(t)]))
+        rewards = torch.Tensor(np.asarray([most_recent[i][2] for i in range(t)]))
 
         probs = model.predict(states)
         actions = actions[:, None].long()  
-        #m = torch.distributions.categorical.Categorical(probs)
-        # action_probs = probs[:, actions.long()]
+    
         action_probs = probs.gather(1, actions)
         
-        # action_probs = action_probs.reshape(t)
-        
-        loss = 1 - (torch.sum(torch.log(action_probs) * rewards) / t)
-        #loss = 1 - torch.sum(m.log_prob(actions) * rewards) / t
-
-        model.optim.zero_grad()
-        loss.backward()
-        model.optim.step()
-
-        # print(f"Episode: {ep}; Total reward: {total_reward}")
+        model.learn_policy(action_probs, rewards, t)
 
     return model, eval_scores
 
