@@ -104,13 +104,7 @@ def train_policy(env, model, episodes=3000, max_episode_length=1000, eval_period
         
         iter_copy  = 750
         t = 0
-        
-        # history = {
-        #         'states': [],
-        #         'actions': [],
-        #         'rewards': []
-        #     }
-        
+
         for k in range(batch_k):
             
             state = env.reset()
@@ -119,14 +113,9 @@ def train_policy(env, model, episodes=3000, max_episode_length=1000, eval_period
             done = False
             
             while not done and t < max_episode_length:
-                # history['states'].append(state)
-
                 action  = model.act(np.expand_dims(state, axis=0))
-
-                # history['actions'].append(action)
-
+            
                 next_state, reward, done = env.step(action)
-                # history['rewards'].append(reward)
                 
                 next_state = np.transpose(next_state, [2, 0, 1])
                 memory.append((state, action, reward, next_state, done))
