@@ -18,7 +18,7 @@ class PolicyNet(nn.Module):
         self.relu4 = nn.ReLU()
         self.out = nn.Linear(512, action_dim)
         
-        self.softmax = nn.Softmax()
+        self.softmax = nn.Softmax(dim=1)
 
     def forward(self, state):
         out = self.relu1(self.conv1(state))

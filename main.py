@@ -16,6 +16,13 @@ def plot_scores(scores):
     plt.plot(scores)
     plt.show()
 
+class RandomAgent():
+    def __init__(self, num_actions):
+        self.num_actions = num_actions
+
+    def act():
+        return random.randint(self.num_actions)
+
 
 def evaluate_model(env, model, eval_episodes=10):
     avg_reward = 0.0
@@ -129,13 +136,16 @@ def train_policy(env, model, episodes=3000, max_episode_length=1000, eval_period
         actions = torch.Tensor(np.asarray(history['actions']))
         rewards = torch.Tensor(np.asarray(history['rewards']))
 
-        probs = model.predict(states)  
-        m = torch.distributions.categorical.Categorical(probs)
+        probs = model.predict(states)
+        actions = actions[:, None].long()  
+        #m = torch.distributions.categorical.Categorical(probs)
         # action_probs = probs[:, actions.long()]
-        # action_probs = probs.gather(1, actions.long().reshape(t, 1))
+        action_probs = probs.gather(1, actions)
+        
         # action_probs = action_probs.reshape(t)
         
-        loss = torch.sum(- m.log_prob(actions) * rewards) / t
+        loss = 1 - (torch.sum(torch.log(action_probs) * rewards) / t)
+        #loss = 1 - torch.sum(m.log_prob(actions) * rewards) / t
 
         model.optim.zero_grad()
         loss.backward()
