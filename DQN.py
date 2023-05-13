@@ -67,14 +67,23 @@ class DQN():
         if len(memory) >= batch_size:
             batch = random.sample(memory, batch_size)
 
-            states = torch.Tensor(np.array([batch[i][0] for i in range(batch_size)]))
-            actions = torch.Tensor(np.array([batch[i][1] for i in range(batch_size)]))
-            states_ = torch.Tensor(np.array([batch[i][2] for i in range(batch_size)]))
-            rewards = torch.Tensor(np.array([batch[i][3] for i in range(batch_size)]))
-            dones = torch.Tensor(np.array([batch[i][4] for i in range(batch_size)]))
+            #states = torch.Tensor(np.array([batch[i][0] for i in range(batch_size)]))
+            #actions = torch.Tensor(np.array([batch[i][1] for i in range(batch_size)]))
+            #states_ = torch.Tensor(np.array([batch[i][2] for i in range(batch_size)]))
+            #rewards = torch.Tensor(np.array([batch[i][3] for i in range(batch_size)]))
+            #dones = torch.Tensor(np.array([batch[i][4] for i in range(batch_size)]))
+
+            batch = list(zip(*batch))
+            batch = [list(category) for category in batch]
+
+            states = torch.Tensor(np.array(batch[0]))
+            actions = torch.Tensor(np.array(batch[1]))
+            states_ = torch.Tensor(np.array(batch[2]))
+            rewards = torch.Tensor(np.array(batch[3]))
+            dones = torch.Tensor(np.array(batch[4]))
 
             q_values = self.online_network(states)
-            q_values = q_values[np.arange(batch_size), actions.int()]
+            q_values = q_values[np.arange(batch_size), actions.long()]
             # q_values = self.online_network(states).gather(1, actions.long().reshape(batch_size, 1))
             # q_values = q_values.reshape(batch_size)
             with torch.no_grad():

@@ -9,8 +9,9 @@ import sys
 
 import matplotlib.pyplot as plt
 
-BUFFER_SIZE = 3000
+BUFFER_SIZE = 4096
 BATCH_SIZE = 32
+EPISODES = 3000
 
 def plot_scores(scores):
     plt.plot(scores)
@@ -148,14 +149,18 @@ def train_policy(env, model, episodes=3000, max_episode_length=1000, eval_period
 def main():
     algorithm = sys.argv[1]
     print(algorithm)
-    env = CatchEnv()
-    
-    if algorithm.lower() == "dqn":
-        model = DQN(env.state_shape(), env.get_num_actions())
-        model, scores = train_value(env, model)
-    else:
-        model = Policy(env.state_shape(), env.get_num_actions())
-        model, scores = train_policy(env, model)
+    for run in range(1, 6):
+        env = CatchEnv()
+        
+        if algorithm.lower() == "dqn":
+            model = DQN(env.state_shape(), env.get_num_actions())
+            model, scores = train_value(env, model, episodes=EPISODES)
+        else:
+            model = Policy(env.state_shape(), env.get_num_actions())
+            model, scores = train_policy(env, model, episodes=EPISODES)
+
+        np.save("group_07_catch_rewards_" + str(run) + ".npy", scores)
+
     plot_scores(scores)
 
 if __name__ == '__main__':
