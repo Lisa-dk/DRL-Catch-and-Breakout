@@ -52,6 +52,11 @@ class DQN():
             q_values = self.online_network(torch.Tensor(state))
         return torch.argmax(q_values).item()
     
+    def act_greedy(self, state, _):
+        with torch.no_grad():
+            q_values = self.online_network(torch.Tensor(state))
+        return torch.argmax(q_values).item()
+    
     def update(self, y_pred, y_target):
         loss = self.loss(y_pred, y_target)
         self.optimizer.zero_grad()

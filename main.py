@@ -37,7 +37,7 @@ def evaluate_model(env, model, eval_episodes=10):
         while not done:
             state = np.expand_dims(state, axis=0)
             if model.name == "DQN":
-                action = model.act(state, env.get_num_actions())
+                action = model.act_greedy(state, env.get_num_actions())
             elif model.name == "policy":
                 action = model.act(state, greedy=True)
             next_state, reward, done = env.step(action)
@@ -155,6 +155,7 @@ def main():
         if algorithm.lower() == "dqn":
             model = DQN(env.state_shape(), env.get_num_actions())
             model, scores = train_value(env, model, episodes=EPISODES)
+            plot_scores(scores)
         else:
             model = Policy(env.state_shape(), env.get_num_actions())
             model, scores = train_policy(env, model, episodes=EPISODES)
