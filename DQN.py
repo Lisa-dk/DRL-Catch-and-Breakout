@@ -42,7 +42,6 @@ class DQN():
         self.epsilon = 1.0
         self.epsilon_min = 0.1
 
-        # self.loss = torch.nn.MSELoss() #smooth l1 loss huber loss
         self.loss = nn.SmoothL1Loss()
         self.optimizer = torch.optim.Adam(self.online_network.parameters(), lr=learn_rate)
 
@@ -67,12 +66,6 @@ class DQN():
         if len(memory) >= batch_size:
             batch = random.sample(memory, batch_size)
 
-            #states = torch.Tensor(np.array([batch[i][0] for i in range(batch_size)]))
-            #actions = torch.Tensor(np.array([batch[i][1] for i in range(batch_size)]))
-            #states_ = torch.Tensor(np.array([batch[i][2] for i in range(batch_size)]))
-            #rewards = torch.Tensor(np.array([batch[i][3] for i in range(batch_size)]))
-            #dones = torch.Tensor(np.array([batch[i][4] for i in range(batch_size)]))
-
             batch = list(zip(*batch))
             batch = [list(category) for category in batch]
 
@@ -84,8 +77,7 @@ class DQN():
 
             q_values = self.online_network(states)
             q_values = q_values[np.arange(batch_size), actions.long()]
-            # q_values = self.online_network(states).gather(1, actions.long().reshape(batch_size, 1))
-            # q_values = q_values.reshape(batch_size)
+
             with torch.no_grad():
                 next_q_values = self.target_network(states_)
 
