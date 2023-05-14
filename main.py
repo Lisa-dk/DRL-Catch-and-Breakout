@@ -149,7 +149,7 @@ def train_policy(env, model, episodes=3000, max_episode_length=1000, eval_period
 def main():
     algorithm = sys.argv[1]
     print(algorithm)
-    for run in range(1, 6):
+    for run in range(2, 6):
         env = CatchEnv()
         
         if algorithm.lower() == "dqn":
