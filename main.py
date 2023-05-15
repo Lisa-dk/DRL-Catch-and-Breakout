@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 
 BUFFER_SIZE = 4096
 BATCH_SIZE = 32
-EPISODES = 3000
+EPISODES = 2000
 
 def plot_scores(scores):
     plt.plot(scores)
@@ -155,7 +155,6 @@ def main():
         if algorithm.lower() == "dqn":
             model = DQN(env.state_shape(), env.get_num_actions())
             model, scores = train_value(env, model, episodes=EPISODES)
-            plot_scores(scores)
         else:
             model = Policy(env.state_shape(), env.get_num_actions())
             model, scores = train_policy(env, model, episodes=EPISODES)
