@@ -41,9 +41,10 @@ def evaluate_model(env, model, eval_episodes=10):
             elif model.name == "policy":
                 action = model.act(state, greedy=True)
             next_state, reward, done = env.step(action)
-            total_reward += reward
+            
             next_state = np.transpose(next_state, [2, 0, 1])
             state = next_state
+        total_reward += reward
             
         avg_reward += total_reward
 
@@ -155,11 +156,12 @@ def main():
         if algorithm.lower() == "dqn":
             model = DQN(env.state_shape(), env.get_num_actions())
             model, scores = train_value(env, model, episodes=EPISODES)
+            plot_scores(scores)
         else:
             model = Policy(env.state_shape(), env.get_num_actions())
             model, scores = train_policy(env, model, episodes=EPISODES)
 
-        np.save("group_07_catch_rewards_" + str(run) + ".npy", scores)
+        np.save("group_07_catch_rewards_tets_" + str(run) + ".npy", scores)
 
     plot_scores(scores)
 
