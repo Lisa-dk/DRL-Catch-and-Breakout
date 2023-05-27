@@ -4,12 +4,48 @@ from stable_baselines3 import A2C
 from stable_baselines3.common.callbacks import EvalCallback
 from stable_baselines3.common.env_util import make_atari_env
 from stable_baselines3.common.vec_env import VecFrameStack
+from stable_baselines3.common.callbacks import BaseCallback
+from stable_baselines3.common.results_plotter import load_results, ts2xy, plot_results
+import os
 
 
 EPISODES = 3000
 LEARNING_RATE = 0.0005
 ENV = "BreakoutNoFrameskip-v4" # https://www.codeproject.com/Articles/5271947/Introduction-to-OpenAI-Gym-Atari-Breakout
 
+import matplotlib.pyplot as plt
+import numpy as np
+# %matplotlib notebook
+
+
+class PlottingCallback(BaseCallback):
+    """
+    Callback for plotting the performance in realtime.
+
+    :param verbose: (int)
+    """
+    def __init__(self, verbose=1):
+        super(PlottingCallback, self).__init__(verbose)
+        self._plot = None
+    
+    def _on_step(self) -> bool:
+        log_dir = "/tmp/bo/"
+        # get the monitor's data
+        x, y = ts2xy(load_results(log_dir), 'timesteps')
+        if self._plot is None: # make the plot
+            plt.ion()
+            fig = plt.figure(figsize=(6,3))
+            ax = fig.add_subplot(111)
+            line, = ax.plot(x, y)
+            self._plot = (line, ax, fig)
+            plt.show()
+        else: # update and rescale the plot
+            self._plot[0].set_data(x, y)
+            self._plot[-2].relim()
+            self._plot[-2].set_xlim([self.locals["total_timesteps"] * -0.02, 
+                                    self.locals["total_timesteps"] * 1.02])
+            self._plot[-2].autoscale_view(True,True,True)
+            self._plot[-1].canvas.draw()
 
 def eval_greedy(env, model, eval_runs=10):
     avg_reward = 0.0
@@ -58,18 +94,19 @@ def main():
     env = gym.make("BreakoutNoFrameskip-v4")
     print("Observation Space: ", env.observation_space)
     print("Action Space       ", env.action_space)
+    log_dir = "./logs/train/"
 
-    train_env = make_atari_env(ENV, n_envs=4, seed=42)
-    train_env = VecFrameStack(train_env, n_stack=4)
-    eval_env = make_atari_env(ENV, n_envs=4, seed=42)
-    eval_env = VecFrameStack(eval_env, n_stack=4)
+    env = make_atari_env(ENV, n_envs=4, seed=42, monitor_dir=log_dir)
+    env = VecFrameStack(env, n_stack=4)
+    os.makedirs(log_dir, exist_ok=True)
     # I don't really understand how this works yet
-    eval_callback = EvalCallback(eval_env, best_model_save_path="./logs/",
+    eval_callback = EvalCallback(env, best_model_save_path="./logs/",
                              log_path="./logs/", eval_freq=2000, n_eval_episodes=10,
                              deterministic=False, render=False)
+    plotting_callback = PlottingCallback()
 
-    model = A2C("CnnPolicy", train_env, verbose=1, seed=42)
-    model.learn(total_timesteps=20_000, callback=eval_callback)
+    model = A2C("CnnPolicy", env, verbose=1, seed=42, tensorboard_log=log_dir)
+    model.learn(total_timesteps=int(1e6), tb_log_name="A2C", callback=eval_callback)
 
     # vec_env = model.get_env()
     # obs = vec_env.reset()
