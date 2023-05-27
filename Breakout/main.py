@@ -106,7 +106,7 @@ def main():
     plotting_callback = PlottingCallback()
 
     model = A2C("CnnPolicy", env, verbose=1, seed=42, tensorboard_log=log_dir)
-    model.learn(total_timesteps=int(1e6), tb_log_name="A2C", callback=eval_callback)
+    model.learn(total_timesteps=int(1e6), tb_log_name="A2C")
 
     # vec_env = model.get_env()
     # obs = vec_env.reset()
