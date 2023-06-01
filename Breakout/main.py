@@ -50,7 +50,9 @@ class PlottingCallback(BaseCallback):
             self._plot[-2].autoscale_view(True,True,True)
             self._plot[-1].canvas.draw()
 
-
+def plot_scores(scores):
+    plt.plot(scores)
+    plt.show()
 
 def main():
     algorithm = sys.argv[1]
@@ -91,6 +93,7 @@ def main():
                 num_iter += 1
         eval_rewards.append(avg_rewards/num_iter)
     np.save("./rewards_breakout_" + algorithm + ".npy", eval_rewards)
+    plot_scores(avg_rewards)
 
 
     
