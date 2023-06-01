@@ -11,7 +11,7 @@ from stable_baselines3.common.results_plotter import load_results, ts2xy, plot_r
 import os
 import sys
 
-EPISODES = 10
+EPISODES = 50
 LEARNING_RATE = 0.0005
 SEED = 42
 EVAL_EPISODES = 10
@@ -63,7 +63,7 @@ def main():
     print("Action Space       ", env.action_space)
     log_dir = "./logs/train/"
 
-    env = make_atari_env(ENV, n_envs=8, seed=SEED, monitor_dir=log_dir)
+    env = make_atari_env(ENV, n_envs=16, seed=SEED, monitor_dir=log_dir)
     env = VecFrameStack(env, n_stack=4)
 
     os.makedirs(log_dir, exist_ok=True)
