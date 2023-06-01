@@ -1,6 +1,7 @@
 import gymnasium as gym
 import numpy as np
 from stable_baselines3 import A2C
+from stable_baselines3 import PPO
 from stable_baselines3.common.callbacks import EvalCallback
 from stable_baselines3.common.env_util import make_atari_env
 from stable_baselines3.common.vec_env import VecFrameStack
@@ -105,7 +106,7 @@ def main():
                              deterministic=False, render=False)
     plotting_callback = PlottingCallback()
 
-    model = A2C("CnnPolicy", env, verbose=1, seed=42, tensorboard_log=log_dir)
+    model = PPO("CnnPolicy", env, verbose=1, seed=42, tensorboard_log=log_dir)
     model.learn(total_timesteps=int(1e6), tb_log_name="A2C")
 
     # vec_env = model.get_env()
