@@ -11,7 +11,7 @@ from stable_baselines3.common.results_plotter import load_results, ts2xy, plot_r
 import os
 import sys
 
-EPISODES = 50
+EPISODES = 1
 LEARNING_RATE = 0.0005
 SEED = 42
 EVAL_EPISODES = 10
@@ -71,16 +71,17 @@ def main():
     if algorithm.lower() == "ppo":
         model = PPO("CnnPolicy", env, seed=SEED, tensorboard_log=log_dir)
     elif algorithm.lower() == "a2c":
-        model = A2C("CnnPolicy", env, seed=SEED, tensorboard_log=log_dir)
+        model = A2C("CnnPolicy", env, seed=SEED, tensorboard_log=log_dir, verbose=1)
     else:
         print("Enter a valid model (ppo or a2c)")
         exit()
 
     eval_callback = StopTrainingOnMaxEpisodes(max_episodes=10)
 
+    model.learn(total_timesteps=int(5e6), tb_log_name="A2C", reset_num_timesteps=True)
     eval_rewards = []
     for ep in range(int(EPISODES)):
-        model.learn(total_timesteps=int(1e5), tb_log_name="A2C", reset_num_timesteps=False)
+        
         avg_rewards = 0.0
         for _ in range(EVAL_EPISODES):
             total_reward = 0.0
@@ -89,17 +90,20 @@ def main():
             while not (True in dones):
                 action, _states = model.predict(obs)
                 obs, rewards, dones, info = env.step(action)
-                env.render()
+                #env.render()
                 total_reward += np.sum(rewards)
             avg_rewards += total_reward
+            print(total_reward)
 
         eval_rewards.append(avg_rewards/EVAL_EPISODES)
         print(avg_rewards/EVAL_EPISODES)
 
+    model.save('trained_' + algorithm + '_model')
+
     print(eval_rewards)
     np.save("./rewards_breakout_" + algorithm + ".npy", eval_rewards)
     print(eval_rewards)
-    plot_scores(eval_rewards)
+    #plot_scores(eval_rewards)
 
 
     
