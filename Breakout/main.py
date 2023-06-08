@@ -15,6 +15,7 @@ EPISODES = 1
 LEARNING_RATE = 0.0005
 SEED = 42
 EVAL_EPISODES = 10
+TRAIN_STEPS = int(5e6)
 ENV = "BreakoutNoFrameskip-v4" # https://www.codeproject.com/Articles/5271947/Introduction-to-OpenAI-Gym-Atari-Breakout
 
 import matplotlib.pyplot as plt
@@ -55,6 +56,19 @@ def plot_scores(scores):
     plt.plot(scores)
     plt.show()
 
+def eval_random(env):
+    avg_rewards = 0.0
+    for _ in range(EVAL_EPISODES):
+        total_reward = 0.0
+        obs = env.reset()
+        dones = [False for _ in range(4)]
+        while not (True in dones):
+            action, _states = env.action_space.sample()
+            obs, rewards, dones, info = env.step(action)
+            total_reward += np.sum(rewards)
+        avg_rewards += total_reward
+    return avg_rewards / EVAL_EPISODES
+
 def main():
     algorithm = sys.argv[1]
 
@@ -76,33 +90,26 @@ def main():
         print("Enter a valid model (ppo or a2c)")
         exit()
 
-    eval_callback = StopTrainingOnMaxEpisodes(max_episodes=10)
 
-    model.learn(total_timesteps=int(5e6), tb_log_name="A2C", reset_num_timesteps=True)
-    eval_rewards = []
-    for ep in range(int(EPISODES)):
+    model.learn(total_timesteps=TRAIN_STEPS, tb_log_name=algorithm.lower(), reset_num_timesteps=True)
+
+    avg_reward = 0.0
+    for _ in range(EVAL_EPISODES):
+        total_reward = 0.0
+        obs = env.reset()
+        dones = [False for _ in range(4)]
+        while not (True in dones):
+            action, _states = model.predict(obs)
+            obs, rewards, dones, info = env.step(action)
+            #env.render()
+            total_reward += np.sum(rewards)
+        avg_reward += total_reward
         
-        avg_rewards = 0.0
-        for _ in range(EVAL_EPISODES):
-            total_reward = 0.0
-            obs = env.reset()
-            dones = [False for _ in range(4)]
-            while not (True in dones):
-                action, _states = model.predict(obs)
-                obs, rewards, dones, info = env.step(action)
-                #env.render()
-                total_reward += np.sum(rewards)
-            avg_rewards += total_reward
-            print(total_reward)
-
-        eval_rewards.append(avg_rewards/EVAL_EPISODES)
-        print(avg_rewards/EVAL_EPISODES)
+    print(avg_reward / EVAL_EPISODES)
+    print(eval_random(env))
 
     model.save('trained_' + algorithm + '_model')
 
-    print(eval_rewards)
-    np.save("./rewards_breakout_" + algorithm + ".npy", eval_rewards)
-    print(eval_rewards)
     #plot_scores(eval_rewards)
 
 
