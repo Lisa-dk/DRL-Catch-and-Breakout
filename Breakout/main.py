@@ -11,10 +11,8 @@ from stable_baselines3.common.results_plotter import load_results, ts2xy, plot_r
 import os
 import sys
 
-EPISODES = 1
-LEARNING_RATE = 0.0005
 SEED = 42
-EVAL_EPISODES = 10
+EVAL_EPISODES = 50
 TRAIN_STEPS = int(5e6)
 ENV = "BreakoutNoFrameskip-v4" # https://www.codeproject.com/Articles/5271947/Introduction-to-OpenAI-Gym-Atari-Breakout
 
@@ -57,20 +55,23 @@ def plot_scores(scores):
     plt.show()
 
 def eval_random(env):
-    avg_rewards = 0.0
+    eval_rewards = []
     for _ in range(EVAL_EPISODES):
         total_reward = 0.0
         obs = env.reset()
         dones = [False for _ in range(4)]
         while not (True in dones):
-            action, _states = env.action_space.sample()
+            action = env.action_space.sample()
             obs, rewards, dones, info = env.step(action)
             total_reward += np.sum(rewards)
-        avg_rewards += total_reward
-    return avg_rewards / EVAL_EPISODES
+        eval_rewards.append(total_reward)
+    return eval_rewards
 
 def main():
     algorithm = sys.argv[1]
+    lr_rate = sys.argv[2]
+    lr_rate = float(lr_rate)
+    print(lr_rate)
 
     env = gym.make("BreakoutNoFrameskip-v4", render_mode="human")
     print("Observation Space: ", env.observation_space)
@@ -83,9 +84,9 @@ def main():
     os.makedirs(log_dir, exist_ok=True)
 
     if algorithm.lower() == "ppo":
-        model = PPO("CnnPolicy", env, seed=SEED, tensorboard_log=log_dir)
+        model = PPO("CnnPolicy", env, seed=SEED, tensorboard_log=log_dir, verbose=1, learning_rate=lr_rate)
     elif algorithm.lower() == "a2c":
-        model = A2C("CnnPolicy", env, seed=SEED, tensorboard_log=log_dir, verbose=1)
+        model = A2C("CnnPolicy", env, seed=SEED, tensorboard_log=log_dir, verbose=1, learning_rate=lr_rate)
     else:
         print("Enter a valid model (ppo or a2c)")
         exit()
@@ -93,7 +94,8 @@ def main():
 
     model.learn(total_timesteps=TRAIN_STEPS, tb_log_name=algorithm.lower(), reset_num_timesteps=True)
 
-    avg_reward = 0.0
+  
+    eval_rewards = []
     for _ in range(EVAL_EPISODES):
         total_reward = 0.0
         obs = env.reset()
@@ -103,12 +105,15 @@ def main():
             obs, rewards, dones, info = env.step(action)
             #env.render()
             total_reward += np.sum(rewards)
-        avg_reward += total_reward
-        
-    print(avg_reward / EVAL_EPISODES)
-    print(eval_random(env))
+        eval_rewards.append(total_reward)
+
+    plot_scores(eval_rewards)
+    # random_eval_rewards = eval_random(env)
+    # plot_scores(eval_random(random_eval_rewards))
 
     model.save('trained_' + algorithm + '_model')
+    np.save('./logs/eval_rewards_' +  algorithm.lower() + '_' + lr_rate + '.npy', eval_rewards)
+    # np.save('./logs/eval_rewards_random.npy', random_eval_rewards)
 
     #plot_scores(eval_rewards)
 
