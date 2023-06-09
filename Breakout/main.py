@@ -14,6 +14,7 @@ import sys
 SEED = 42
 EVAL_EPISODES = 50
 TRAIN_STEPS = int(5e6)
+N_ENVS = 16
 ENV = "BreakoutNoFrameskip-v4" # https://www.codeproject.com/Articles/5271947/Introduction-to-OpenAI-Gym-Atari-Breakout
 
 import matplotlib.pyplot as plt
@@ -59,9 +60,9 @@ def eval_random(env):
     for _ in range(EVAL_EPISODES):
         total_reward = 0.0
         obs = env.reset()
-        dones = [False for _ in range(4)]
+        dones = [False for _ in range(N_ENVS)]
         while not (True in dones):
-            action = env.action_space.sample()
+            action = [env.action_space.sample() for x in range(N_ENVS)]
             obs, rewards, dones, info = env.step(action)
             total_reward += np.sum(rewards)
         eval_rewards.append(total_reward)
@@ -78,7 +79,7 @@ def main():
     print("Action Space       ", env.action_space)
     log_dir = "./logs/train/"
 
-    env = make_atari_env(ENV, n_envs=16, seed=SEED, monitor_dir=log_dir)
+    env = make_atari_env(ENV, n_envs=N_ENVS, seed=SEED, monitor_dir=log_dir)
     env = VecFrameStack(env, n_stack=4)
 
     os.makedirs(log_dir, exist_ok=True)
@@ -92,7 +93,7 @@ def main():
         exit()
 
 
-    model.learn(total_timesteps=TRAIN_STEPS, tb_log_name=algorithm.lower(), reset_num_timesteps=True)
+    model.learn(total_timesteps=TRAIN_STEPS, tb_log_name=algorithm.lower() + '_' + str(lr_rate), reset_num_timesteps=True)
 
   
     eval_rewards = []
@@ -107,12 +108,12 @@ def main():
             total_reward += np.sum(rewards)
         eval_rewards.append(total_reward)
 
-    plot_scores(eval_rewards)
+    # plot_scores(eval_rewards)
     # random_eval_rewards = eval_random(env)
     # plot_scores(eval_random(random_eval_rewards))
 
-    model.save('trained_' + algorithm + '_model')
-    np.save('./logs/eval_rewards_' +  algorithm.lower() + '_' + lr_rate + '.npy', eval_rewards)
+    model.save('trained_' + algorithm + '_model_' + str(lr_rate))
+    np.save('./logs/eval_rewards_' +  algorithm.lower() + '_' + str(lr_rate) + '.npy', eval_rewards)
     # np.save('./logs/eval_rewards_random.npy', random_eval_rewards)
 
     #plot_scores(eval_rewards)
