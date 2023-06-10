@@ -10,17 +10,18 @@ from stable_baselines3.common.callbacks import StopTrainingOnMaxEpisodes
 from stable_baselines3.common.results_plotter import load_results, ts2xy, plot_results
 import os
 import sys
+from eval_policy import evaluate_policy
 
 SEED = 42
 EVAL_EPISODES = 100
-TRAIN_STEPS = int(10e6)
+TRAIN_STEPS = int(1e7)
 N_ENVS = 16
 ENV = "BreakoutNoFrameskip-v4" # https://www.codeproject.com/Articles/5271947/Introduction-to-OpenAI-Gym-Atari-Breakout
 
 import matplotlib.pyplot as plt
 import numpy as np
 # %matplotlib notebook
-
+    
 
 class PlottingCallback(BaseCallback):
     """
@@ -93,39 +94,26 @@ def main():
         else:
             print("Enter a valid model (ppo or a2c)")
             exit()
-        model.learn(total_timesteps=TRAIN_STEPS, tb_log_name=algorithm.lower() + '_' + str(lr_rate), reset_num_timesteps=True)
+        model.learn(total_timesteps=TRAIN_STEPS, tb_log_name=algorithm.lower() + '_' + str(lr_rate))
         model.save('trained_' + algorithm + '_model_10m_' + str(lr_rate))
 
     else:
         print("evaluating")
+        env = gym.make("BreakoutNoFrameskip-v4", render_mode="human")
+        env = make_atari_env(ENV, n_envs=16, seed=SEED, monitor_dir=log_dir)
+        env = VecFrameStack(env, n_stack=4)
         model = A2C.load('trained_' + algorithm + '_model_10m_' + str(lr_rate))
-        eval_rewards = []
-        for _ in range(EVAL_EPISODES):
-            total_reward = 0.0
-            obs = env.reset()
-            tf = True
-            while tf:
-                action, _states = model.predict(obs)
-                obs, rewards, dones, info = env.step(action)
-                total_reward += np.sum(rewards)
-                env.render()
 
-                if True in dones:
-                    tf = False
-                
-            eval_rewards.append(total_reward)
-        np.save('./logs/eval_rewards_' +  algorithm.lower() + '_10m_' + str(lr_rate) + '.npy', eval_rewards)
-        plot_scores(eval_rewards)
-        print("Average reward: ", np.mean(eval_rewards))
+        random_eval_rewards = evaluate_policy(model, env, n_eval_episodes=100, return_episode_rewards=True, random_player=True)
+        model_eval_rewards = evaluate_policy(model, env, n_eval_episodes=100, return_episode_rewards=True, random_player=False)
+        print(model_eval_rewards[0], np.mean(model_eval_rewards[0]))
+        print(random_eval_rewards[0], np.mean(random_eval_rewards[0]))
+        np.save('./logs/eval_rewards_' +  algorithm.lower() + '_10m_' + str(lr_rate) + '.npy', model_eval_rewards[0])
+        np.save('./logs/eval_rewards_random_10m_' + str(lr_rate) + '.npy', random_eval_rewards[0])
 
-
-    # plot_scores(eval_rewards)
-    # random_eval_rewards = eval_random(env)
-    # plot_scores(eval_random(random_eval_rewards))
-
-    # np.save('./logs/eval_rewards_random.npy', random_eval_rewards)
-
-    #plot_scores(eval_rewards)
+        # print("Average reward: ", np.mean(eval_rewards))
+        # print(eval_rewards)
+        # plot_scores(eval_rewards)
 
 
     
