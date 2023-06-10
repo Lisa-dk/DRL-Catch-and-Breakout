@@ -72,6 +72,7 @@ def main():
     algorithm = sys.argv[1]
     lr_rate = sys.argv[2]
     lr_rate = float(lr_rate)
+    eval = int(sys.argv[3])
     print(lr_rate)
 
     env = gym.make("BreakoutNoFrameskip-v4", render_mode="human")
@@ -84,36 +85,44 @@ def main():
 
     os.makedirs(log_dir, exist_ok=True)
 
-    if algorithm.lower() == "ppo":
-        model = PPO("CnnPolicy", env, seed=SEED, tensorboard_log=log_dir, verbose=1, learning_rate=lr_rate)
-    elif algorithm.lower() == "a2c":
-        model = A2C("CnnPolicy", env, seed=SEED, tensorboard_log=log_dir, verbose=1, learning_rate=lr_rate)
+    if not eval:
+        if algorithm.lower() == "ppo":
+            model = PPO("CnnPolicy", env, seed=SEED, tensorboard_log=log_dir, verbose=1, learning_rate=lr_rate)
+        elif algorithm.lower() == "a2c":
+            model = A2C("CnnPolicy", env, seed=SEED, tensorboard_log=log_dir, verbose=1, learning_rate=lr_rate)
+        else:
+            print("Enter a valid model (ppo or a2c)")
+            exit()
+        model.learn(total_timesteps=TRAIN_STEPS, tb_log_name=algorithm.lower() + '_' + str(lr_rate), reset_num_timesteps=True)
+        model.save('trained_' + algorithm + '_model_10m_' + str(lr_rate))
+
     else:
-        print("Enter a valid model (ppo or a2c)")
-        exit()
+        print("evaluating")
+        model = A2C.load('trained_' + algorithm + '_model_10m_' + str(lr_rate))
+        eval_rewards = []
+        for _ in range(EVAL_EPISODES):
+            total_reward = 0.0
+            obs = env.reset()
+            tf = True
+            while tf:
+                action, _states = model.predict(obs)
+                obs, rewards, dones, info = env.step(action)
+                total_reward += np.sum(rewards)
+                env.render()
 
+                if True in dones:
+                    tf = False
+                
+            eval_rewards.append(total_reward)
+        np.save('./logs/eval_rewards_' +  algorithm.lower() + '_10m_' + str(lr_rate) + '.npy', eval_rewards)
+        plot_scores(eval_rewards)
+        print("Average reward: ", np.mean(eval_rewards))
 
-    model.learn(total_timesteps=TRAIN_STEPS, tb_log_name=algorithm.lower() + '_' + str(lr_rate), reset_num_timesteps=True)
-
-  
-    eval_rewards = []
-    for _ in range(EVAL_EPISODES):
-        total_reward = 0.0
-        obs = env.reset()
-        dones = [False for _ in range(4)]
-        while not (True in dones):
-            action, _states = model.predict(obs)
-            obs, rewards, dones, info = env.step(action)
-            #env.render()
-            total_reward += np.sum(rewards)
-        eval_rewards.append(total_reward)
 
     # plot_scores(eval_rewards)
     # random_eval_rewards = eval_random(env)
     # plot_scores(eval_random(random_eval_rewards))
 
-    model.save('trained_' + algorithm + '_model_10m_' + str(lr_rate))
-    np.save('./logs/eval_rewards_' +  algorithm.lower() + '_10m_' + str(lr_rate) + '.npy', eval_rewards)
     # np.save('./logs/eval_rewards_random.npy', random_eval_rewards)
 
     #plot_scores(eval_rewards)
