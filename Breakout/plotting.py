@@ -5,5 +5,6 @@ def plot_scores(scores):
     plt.plot(scores)
     plt.show()
 
-scores = np.load('./logs/eval_rewards_a2c_0.001.npy')
+scores = np.load('./logs/eval_rewards_random.npy')
+print("average reward: ", np.mean(scores))
 plot_scores(scores)

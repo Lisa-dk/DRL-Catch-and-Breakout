@@ -12,8 +12,8 @@ import os
 import sys
 
 SEED = 42
-EVAL_EPISODES = 50
-TRAIN_STEPS = int(5e6)
+EVAL_EPISODES = 100
+TRAIN_STEPS = int(10e6)
 N_ENVS = 16
 ENV = "BreakoutNoFrameskip-v4" # https://www.codeproject.com/Articles/5271947/Introduction-to-OpenAI-Gym-Atari-Breakout
 
@@ -112,8 +112,8 @@ def main():
     # random_eval_rewards = eval_random(env)
     # plot_scores(eval_random(random_eval_rewards))
 
-    model.save('trained_' + algorithm + '_model_' + str(lr_rate))
-    np.save('./logs/eval_rewards_' +  algorithm.lower() + '_' + str(lr_rate) + '.npy', eval_rewards)
+    model.save('trained_' + algorithm + '_model_10m_' + str(lr_rate))
+    np.save('./logs/eval_rewards_' +  algorithm.lower() + '_10m_' + str(lr_rate) + '.npy', eval_rewards)
     # np.save('./logs/eval_rewards_random.npy', random_eval_rewards)
 
     #plot_scores(eval_rewards)
