@@ -14,6 +14,7 @@ def plot_scores(scores):
     plt.plot(scores)
     plt.show()
 
+# run the agent in the environment for a number of episodes and return the mean total reward over those episodes
 def evaluate_model(env, model, eval_episodes=10):
     avg_reward = 0.0
 
@@ -40,13 +41,16 @@ def evaluate_model(env, model, eval_episodes=10):
     return avg_reward / eval_episodes
         
 
+# train the DQN
 def train_value(env, model, episodes=2500, eval_period=10):
     rewards = []
     mem_buffer = deque(maxlen=BUFFER_SIZE) 
     eval_scores = []
+    # keep track of the total timesteps to know when to update the target network
     t = 0
 
     for episode in range(episodes):
+        # run the model evaluation
         if episode % eval_period == 0:
             eval_reward = evaluate_model(env, model)
             eval_scores.append(eval_reward)
@@ -58,13 +62,17 @@ def train_value(env, model, episodes=2500, eval_period=10):
         cumulative_reward = 0
         iter_copy  = 750
 
+        # run one episode
         while not done:
+            # get the action at this timestep given the state
             action = model.act(np.expand_dims(state, axis=0), env.get_num_actions())
             
+            # make the step and store the trajectory
             next_state, reward, done = env.step(action)
             next_state = np.transpose(next_state, [2, 0, 1])
             mem_buffer.append((state, action, next_state, reward, done))
 
+            # make an update to the model parameters
             if t % iter_copy == 0:
                 print("Update target network")
                 model.learn(mem_buffer, BATCH_SIZE, target_net_update=True)

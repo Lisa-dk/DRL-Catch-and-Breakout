@@ -4,6 +4,7 @@ import random
 import numpy as np
 import copy
 
+# the class for the neural network specifically
 class DQN_Network(torch.nn.Module):
     #https://daiwk.github.io/assets/dqn.pdf
     def __init__(self, input_shape, n_actions, hidden_size):
@@ -33,6 +34,7 @@ class DQN_Network(torch.nn.Module):
 
         return out
 
+# the class for the RL model
 class DQN():
     def __init__(self, input_shape, n_actions, learn_rate=0.00025):
         self.name = "DQN"
@@ -45,6 +47,7 @@ class DQN():
         self.loss = nn.SmoothL1Loss()
         self.optimizer = torch.optim.Adam(self.online_network.parameters(), lr=learn_rate)
 
+    # choose an action given a state
     def act(self, state, action_space):
         if random.random() < self.epsilon:
             return random.randint(0, action_space - 1)
@@ -52,21 +55,25 @@ class DQN():
             q_values = self.online_network(torch.Tensor(state))
         return torch.argmax(q_values).item()
     
+    # choose an action greedily and do not explore
     def act_greedy(self, state, _):
         with torch.no_grad():
             q_values = self.online_network(torch.Tensor(state))
         return torch.argmax(q_values).item()
     
+    # update the model parameters
     def update(self, y_pred, y_target):
         loss = self.loss(y_pred, y_target)
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
     
+    # update epsilon
     def epsilon_decay_update(self, decay_rate):
         new_epsilon = self.epsilon - self.epsilon * decay_rate
         self.epsilon = new_epsilon if new_epsilon > self.epsilon_min else self.epsilon_min
     
+    # sample from the memory buffer and compute the tensors with gradients and TD targets
     def experience_replay(self, memory, batch_size, gamma=0.99):
         if len(memory) >= batch_size:
             batch = random.sample(memory, batch_size)
@@ -90,7 +97,7 @@ class DQN():
 
             return q_values, q_targets
             
-    
+    # make one GD step given a memory buffer and whether it should update the target network
     def learn(self, memory, batch_size, target_net_update=False):
         if len(memory) < batch_size:
             return
