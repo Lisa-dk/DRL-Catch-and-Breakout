@@ -1,11 +1,8 @@
 from catch import CatchEnv
-from policy import Policy
 from collections import deque
 from DQN import DQN
 import numpy as np
-import torch
 import random
-import sys
 
 import matplotlib.pyplot as plt
 
@@ -16,14 +13,6 @@ EPISODES = 2000
 def plot_scores(scores):
     plt.plot(scores)
     plt.show()
-
-class RandomAgent():
-    def __init__(self, num_actions):
-        self.num_actions = num_actions
-
-    def act():
-        return random.randint(self.num_actions)
-
 
 def evaluate_model(env, model, eval_episodes=10):
     avg_reward = 0.0
