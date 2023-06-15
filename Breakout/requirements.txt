@@ -1,4 +1,10 @@
-gymnasium[all, accept-rom-license]==0.28.1
+gymnasium[atari,all, accept-rom-license]==0.28.1
+swig
+Box2D
+box2d-kengz
+pygame
+ale_py
+autorom
 matplotlib==3.7.1
 numpy==1.24.2
 stable_baselines3==2.0.0a10
